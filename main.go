@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,8 +14,13 @@ import (
 )
 
 func main() {
-	port := ":" + os.Getenv("PORT")
-	db, err := utils.Connect(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8000"
+	}
+
+	db, err := utils.Connect()
 
 	if err != nil {
 		log.Fatal(err.Error())
@@ -30,5 +36,5 @@ func main() {
 
 	controllers.NewUserController(route, db)
 
-	route.Logger.Fatal(route.Start(port))
+	route.Logger.Fatal(route.Start(fmt.Sprintf(":%s", port)))
 }

@@ -43,6 +43,16 @@ func (m *mysqlUserRepository) GetByID(id uint, user *models.User) error {
 	return nil
 }
 
+func (m *mysqlUserRepository) GetByEmail(user *models.User) error {
+	err := m.DB.Where("email = ?", user.Email).First(&user).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *mysqlUserRepository) Update(user *models.User) error {
 	err := m.DB.Save(&user).Error
 

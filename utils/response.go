@@ -7,16 +7,16 @@ import (
 
 type ResponseStruct struct {
 	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Message interface{} `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
-func Response(status, message string, data interface{}) ResponseStruct {
-	dataType := fmt.Sprintf("%T", data)
+func Response(status string, message interface{}, data interface{}) ResponseStruct {
+	dataType := fmt.Sprintf("%T", message)
 
 	if dataType == "error" {
-		dataJSON, _ := json.Marshal(data)
-		return ResponseStruct{status, message, dataJSON}
+		errorJSON, _ := json.Marshal(message)
+		return ResponseStruct{status, errorJSON, nil}
 	}
 
 	return ResponseStruct{status, message, data}

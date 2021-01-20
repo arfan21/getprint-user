@@ -63,3 +63,21 @@ func (s *services) Update(user *models.User) error {
 
 	return nil
 }
+
+func (s *services) Login(user *models.User) error {
+	password := user.Password
+
+	err := s.userRepo.GetByEmail(user)
+
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(password.String))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

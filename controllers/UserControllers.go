@@ -8,6 +8,7 @@ import (
 	"github.com/arfan21/getprint-user/repository"
 	"github.com/arfan21/getprint-user/services"
 	"github.com/arfan21/getprint-user/utils"
+	"github.com/arfan21/getprint-user/validation"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -21,14 +22,9 @@ func NewUserController(route *echo.Echo, db *gorm.DB) {
 	userService := services.NewUserServices(userRepo)
 	controllers := &userController{userService}
 
-	route.POST("/users", controllers.Create)
-	route.GET("/users/:id", controllers.GetByID)
-	route.PUT("/users/:id", controllers.Update)
-}
-
-type Test struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	route.POST("/user", controllers.Create)
+	route.GET("/user/:id", controllers.GetByID)
+	route.PUT("/user/:id", controllers.Update)
 }
 
 func (s *userController) Create(c echo.Context) error {
@@ -41,7 +37,7 @@ func (s *userController) Create(c echo.Context) error {
 	}
 
 	//validate user value
-	err = user.Validate()
+	err = validation.Validate(*user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
 	}
@@ -49,7 +45,6 @@ func (s *userController) Create(c echo.Context) error {
 	//save user into database
 	err = s.userService.Create(user)
 	if err != nil {
-		err = utils.FormatedErrors(err.Error())
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
@@ -67,7 +62,6 @@ func (s *userController) GetByID(c echo.Context) error {
 
 	err = s.userService.GetByID(uint(id), user)
 	if err != nil {
-		err = utils.FormatedErrors(err.Error())
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
@@ -84,7 +78,6 @@ func (s *userController) Update(c echo.Context) error {
 
 	err = s.userService.GetByID(uint(id), user)
 	if err != nil {
-		err = utils.FormatedErrors(err.Error())
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
@@ -93,16 +86,35 @@ func (s *userController) Update(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	err = user.Validate()
+	err = validation.Validate(*user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
 	}
 
 	err = s.userService.Update(user)
 	if err != nil {
-		err = utils.FormatedErrors(err.Error())
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
 	return c.JSON(http.StatusOK, utils.Response("success", "success update user", user))
+}
+
+func (s *userController) Login(c echo.Context) error {
+	user := new(models.User)
+
+	if err := c.Bind(user); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
+	}
+
+	if err := validation.ValidateLogin(*user); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
+	}
+
+	err := s.userService.Login(user)
+
+	if err != nil {
+		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
+	}
+
+	return c.JSON(http.StatusOK, utils.Response("success", "success login", user))
 }
