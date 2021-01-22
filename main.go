@@ -31,8 +31,10 @@ func main() {
 	route.Use(middleware.Recover())
 
 	route.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, world!! live-reload using air and using docker for development, thanks")
+		return c.String(http.StatusOK, "Hello, world, thanks")
 	})
+
+	route.Static("/shared", "shared")
 
 	controllers.NewUserController(route, db)
 

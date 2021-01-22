@@ -30,4 +30,4 @@ services:
             - MYSQL_PASSWORD=password
             - MYSQL_ROOT_PASSWORD=root
         volumes:
-            - /e/MySQL/docker_data:/var/lib/mysql
+            - /mnt/e/MySQL/docker_data:/var/lib/mysql
