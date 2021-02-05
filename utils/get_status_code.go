@@ -16,6 +16,8 @@ func GetStatusCode(err error) int {
 	}
 
 	switch err {
+	case models.ErrBadParamInput:
+		return http.StatusBadRequest
 	case models.ErrConflict:
 		return http.StatusConflict
 	case models.ErrNotFound:

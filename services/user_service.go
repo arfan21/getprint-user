@@ -1,8 +1,11 @@
 package services
 
 import (
+	"fmt"
 	"github.com/arfan21/getprint-user/models"
+	"github.com/arfan21/getprint-user/validation"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 type services struct {
@@ -14,12 +17,17 @@ func NewUserServices(userRepo models.UserRepository) models.UserService {
 }
 
 func (s *services) Create(user *models.User) error {
+	err := validation.Validate(*user)
+	if err != nil {
+		return err
+	}
+
 	if user.Password.Valid {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password.String), bcrypt.DefaultCost)
 		user.Password.Scan(string(hashedPassword))
 	}
 
-	err := s.userRepo.Create(user)
+	err = s.userRepo.Create(user)
 
 	if err != nil {
 		return err
@@ -38,7 +46,7 @@ func (s *services) Get(users *[]models.User) error {
 	return nil
 }
 
-func (s *services) GetByID(id uint, user *models.User) error {
+func (s *services) GetByID(id string, user *models.User) error {
 	err := s.userRepo.GetByID(id, user)
 
 	user.Password.Scan("")
@@ -79,5 +87,18 @@ func (s *services) Login(user *models.User) error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *services) LoginUsingLine(user *models.User) error{
+	lineID := user.Identities.UserIDProvider
+	fmt.Println(lineID)
+	err := s.userRepo.GetByLineID(user)
+	if err != nil{
+		if strings.Contains(err.Error(), "not found"){
+
+		}
+		return err
+	}
 	return nil
 }

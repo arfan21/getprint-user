@@ -2,19 +2,14 @@ package controllers
 
 import (
 	"fmt"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
-
 	"github.com/arfan21/getprint-user/models"
 	"github.com/arfan21/getprint-user/repository"
 	"github.com/arfan21/getprint-user/services"
 	"github.com/arfan21/getprint-user/utils"
-	"github.com/arfan21/getprint-user/validation"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+	"net/http"
 )
 
 type userController struct {
@@ -41,31 +36,21 @@ func (s *userController) Create(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	//validate user value
-	err = validation.Validate(*user)
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
-	}
-
 	//save user into database
 	err = s.userService.Create(user)
 	if err != nil {
-		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
+		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err, nil))
 	}
 
-	return c.JSON(http.StatusOK, utils.Response("success", "Success create user", user))
+	return c.JSON(http.StatusOK, utils.Response("success", nil, user))
 }
 
 func (s *userController) GetByID(c echo.Context) error {
 	user := &models.User{}
 
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id := c.Param("id")
 
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "invalid id", nil))
-	}
-
-	err = s.userService.GetByID(uint(id), user)
+	err := s.userService.GetByID(id, user)
 	if err != nil {
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
@@ -76,24 +61,9 @@ func (s *userController) GetByID(c echo.Context) error {
 func (s *userController) Update(c echo.Context) error {
 	user := &models.User{}
 
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "invalid id", nil))
-	}
-
-	err = s.userService.GetByID(uint(id), user)
-	if err != nil {
-		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
-	}
-
-	err = c.Bind(user)
+	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
-	}
-
-	err = validation.Validate(*user)
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
 	}
 
 	err = s.userService.Update(user)
@@ -111,45 +81,41 @@ func (s *userController) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
 
-	if err := validation.ValidateLogin(*user); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", "error validating data", err))
-	}
-
 	err := s.userService.Login(user)
 
 	if err != nil {
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
-	aud := os.Getenv("AUD")
-	iss := os.Getenv(("ISS"))
-	accessTokenExp := time.Now().Add(time.Minute * 5).Unix()
-	refreshTokenExp := time.Now().AddDate(0, 0, 7).Unix()
-	response := map[string]interface{}{
+	//aud := os.Getenv("AUD")
+	//iss := os.Getenv("ISS")
+	//accessTokenExp := time.Now().Add(time.Minute * 5).Unix()
+	//refreshTokenExp := time.Now().AddDate(0, 0, 7).Unix()
+	//response := map[string]interface{}{
+	//
+	//	"access_token": map[string]interface{}{
+	//		"aud":          aud,
+	//		"iss":          iss,
+	//		"sub":          fmt.Sprint(user.ID),
+	//		"user_id_line": user.UserIDLine,
+	//		"name":         user.Name,
+	//		"email":        user.Email,
+	//		"picture":      user.Picture.String,
+	//		"role":         user.Role,
+	//		"exp":          accessTokenExp,
+	//	},
+	//	"refresh_token": map[string]interface{}{
+	//		"aud":          aud,
+	//		"iss":          iss,
+	//		"user_id_line": user.UserIDLine,
+	//		"name":         user.Name,
+	//		"email":        user.Email,
+	//		"picture":      user.Picture.String,
+	//		"sub":          fmt.Sprint(user.ID),
+	//		"exp":          refreshTokenExp,
+	//	},
+	//	"exp": refreshTokenExp,
+	//}
 
-		"access_token": map[string]interface{}{
-			"aud":          aud,
-			"iss":          iss,
-			"sub":          fmt.Sprint(user.ID),
-			"user_id_line": user.UserIDLine,
-			"name":         user.Name,
-			"email":        user.Email,
-			"picture":      user.Picture.String,
-			"role":         user.Role,
-			"exp":          accessTokenExp,
-		},
-		"refresh_token": map[string]interface{}{
-			"aud":          aud,
-			"iss":          iss,
-			"user_id_line": user.UserIDLine,
-			"name":         user.Name,
-			"email":        user.Email,
-			"picture":      user.Picture.String,
-			"sub":          fmt.Sprint(user.ID),
-			"exp":          refreshTokenExp,
-		},
-		"exp": refreshTokenExp,
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, utils.Response("success", nil, map[string]interface{}{"id" : fmt.Sprint(user.ID)}))
 }

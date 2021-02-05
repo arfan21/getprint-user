@@ -26,7 +26,7 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.User{}, &models.Identities{}, &models.UserLog{})
 	log.Println("MySql Connected")
 	return db, nil
 }
