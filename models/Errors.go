@@ -7,4 +7,5 @@ var (
 	ErrNotFound            = errors.New("error not found")
 	ErrConflict            = errors.New("error conflict")
 	ErrBadParamInput       = errors.New("error bad request")
+	ErrEmailConflict       = errors.New("error duplicate email")
 )

@@ -1,18 +1,30 @@
-package services
+package user
 
 import (
 	"fmt"
-	"github.com/arfan21/getprint-user/models"
-	"github.com/arfan21/getprint-user/validation"
-	"golang.org/x/crypto/bcrypt"
 	"strings"
+
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/arfan21/getprint-user/models"
+	_userRepo "github.com/arfan21/getprint-user/repository/mysql/user"
+	"github.com/arfan21/getprint-user/validation"
 )
 
-type services struct {
-	userRepo models.UserRepository
+type UserService interface {
+	Create(user *models.User) error
+	Get(users *[]models.User) error
+	GetByID(id string, user *models.User) error
+	Update(user *models.User) error
+	Login(user *models.User) error
 }
 
-func NewUserServices(userRepo models.UserRepository) models.UserService {
+type services struct {
+	userRepo _userRepo.UserRepository
+}
+
+func NewUserServices(userRepo _userRepo.UserRepository) UserService {
 	return &services{userRepo}
 }
 
@@ -20,6 +32,14 @@ func (s *services) Create(user *models.User) error {
 	err := validation.Validate(*user)
 	if err != nil {
 		return err
+	}
+
+	user.ID = uuid.NewV4()
+	user.Identities.UserID = user.ID
+	user.UserLog.UserID = user.ID
+	if user.Identities.Provider == "" {
+		user.Identities.Provider = "getprint"
+		user.Identities.UserIDProvider = user.ID.String()
 	}
 
 	if user.Password.Valid {
@@ -90,12 +110,12 @@ func (s *services) Login(user *models.User) error {
 	return nil
 }
 
-func (s *services) LoginUsingLine(user *models.User) error{
+func (s *services) LoginUsingLine(user *models.User) error {
 	lineID := user.Identities.UserIDProvider
 	fmt.Println(lineID)
 	err := s.userRepo.GetByLineID(user)
-	if err != nil{
-		if strings.Contains(err.Error(), "not found"){
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
 
 		}
 		return err

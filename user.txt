@@ -1,8 +1,0 @@
-USER : 
- - create a new
- - update profile
- - details profile
- - can open store
-
-USER - STORE :
- - can follow store

@@ -6,28 +6,15 @@ services:
             dockerfile: dev.Dockerfile
         container_name: getprint_service_user
         ports:
-            - 8010:8010
-        depends_on:
-            - getprint_service_user_mysql
-        volumes:
-            - .:/app
-        working_dir: /app
+            - 8888:8888
         environment:
-            - DB_HOST=getprint_service_user_mysql
+            - DB_HOST=mysql
             - DB_USER=root
             - DB_PASSWORD=root
             - DB_NAME=getprint_users
             - DB_PORT=3306
-    getprint_service_user_mysql:
-        image: mysql:5.7
-        container_name: getprint_service_user_mysql
-        command: mysqld --user=root
-        ports:
-            - 3306:3306
-        environment:
-            - MYSQL_DATABASE=getprint_users
-            - MYSQL_USER=user
-            - MYSQL_PASSWORD=password
-            - MYSQL_ROOT_PASSWORD=root
-        volumes:
-            - /mnt/e/MySQL/docker_data:/var/lib/mysql
+            - PORT=8888
+networks:
+    default:
+        external:
+            name: mysql_default

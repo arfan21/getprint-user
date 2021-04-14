@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -14,9 +13,8 @@ type ResponseStruct struct {
 func Response(status string, message interface{}, data interface{}) ResponseStruct {
 	dataType := fmt.Sprintf("%T", message)
 
-	if dataType == "error" {
-		errorJSON, _ := json.Marshal(message)
-		return ResponseStruct{status, errorJSON, nil}
+	if dataType == "*errors.errorString" { // errorJSON, _ := json.Marshal(message)
+		return ResponseStruct{status, message.(error).Error(), nil}
 	}
 
 	return ResponseStruct{status, message, data}

@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/joho/godotenv/autoload"
+
 	"github.com/arfan21/getprint-user/models"
 
 	"gorm.io/driver/mysql"

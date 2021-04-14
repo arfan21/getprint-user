@@ -1,30 +1,32 @@
-package controllers
+package user
 
 import (
 	"fmt"
-	"github.com/arfan21/getprint-user/models"
-	"github.com/arfan21/getprint-user/repository"
-	"github.com/arfan21/getprint-user/services"
-	"github.com/arfan21/getprint-user/utils"
+	"net/http"
+
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
-	"net/http"
+
+	"github.com/arfan21/getprint-user/models"
+	_userRepo "github.com/arfan21/getprint-user/repository/mysql/user"
+	_userSrv "github.com/arfan21/getprint-user/services/user"
+	"github.com/arfan21/getprint-user/utils"
 )
 
-type userController struct {
-	userService models.UserService
+type UserController interface {
+	Routes(route *echo.Echo)
 }
 
-func NewUserController(route *echo.Echo, db *gorm.DB) {
-	userRepo := repository.NewMysqlUserRepository(db)
-	userService := services.NewUserServices(userRepo)
-	controllers := &userController{userService}
+type userController struct {
+	userService _userSrv.UserService
+}
 
-	route.POST("/user", controllers.Create)
-	route.GET("/user/:id", controllers.GetByID)
-	route.PUT("/user/:id", controllers.Update)
-	route.POST("/login", controllers.Login)
+func NewUserController(db *gorm.DB) UserController {
+	userRepo := _userRepo.NewMysqlUserRepository(db)
+	userService := _userSrv.NewUserServices(userRepo)
+
+	return &userController{userService}
 }
 
 func (s *userController) Create(c echo.Context) error {
@@ -39,6 +41,7 @@ func (s *userController) Create(c echo.Context) error {
 	//save user into database
 	err = s.userService.Create(user)
 	if err != nil {
+		err = utils.CustomErrors(err)
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err, nil))
 	}
 
@@ -82,40 +85,9 @@ func (s *userController) Login(c echo.Context) error {
 	}
 
 	err := s.userService.Login(user)
-
 	if err != nil {
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 
-	//aud := os.Getenv("AUD")
-	//iss := os.Getenv("ISS")
-	//accessTokenExp := time.Now().Add(time.Minute * 5).Unix()
-	//refreshTokenExp := time.Now().AddDate(0, 0, 7).Unix()
-	//response := map[string]interface{}{
-	//
-	//	"access_token": map[string]interface{}{
-	//		"aud":          aud,
-	//		"iss":          iss,
-	//		"sub":          fmt.Sprint(user.ID),
-	//		"user_id_line": user.UserIDLine,
-	//		"name":         user.Name,
-	//		"email":        user.Email,
-	//		"picture":      user.Picture.String,
-	//		"role":         user.Role,
-	//		"exp":          accessTokenExp,
-	//	},
-	//	"refresh_token": map[string]interface{}{
-	//		"aud":          aud,
-	//		"iss":          iss,
-	//		"user_id_line": user.UserIDLine,
-	//		"name":         user.Name,
-	//		"email":        user.Email,
-	//		"picture":      user.Picture.String,
-	//		"sub":          fmt.Sprint(user.ID),
-	//		"exp":          refreshTokenExp,
-	//	},
-	//	"exp": refreshTokenExp,
-	//}
-
-	return c.JSON(http.StatusOK, utils.Response("success", nil, map[string]interface{}{"id" : fmt.Sprint(user.ID)}))
+	return c.JSON(http.StatusOK, utils.Response("success", nil, map[string]interface{}{"id": fmt.Sprint(user.ID), "email": user.Email, "role": user.Role}))
 }
