@@ -13,11 +13,11 @@ import (
 )
 
 type UserService interface {
-	Create(user *models.User) error
+	Create(user models.User) (*models.UserResoponse, error)
 	Get(users *[]models.User) error
-	GetByID(id string, user *models.User) error
-	Update(user *models.User) error
-	Login(user *models.User) error
+	GetByID(id string) (*models.UserResoponse, error)
+	Update(user models.User) (*models.UserResoponse, error)
+	Login(user models.User) (*models.UserLoginResponse, error)
 }
 
 type services struct {
@@ -28,10 +28,10 @@ func NewUserServices(userRepo _userRepo.UserRepository) UserService {
 	return &services{userRepo}
 }
 
-func (s *services) Create(user *models.User) error {
-	err := validation.Validate(*user)
+func (s *services) Create(user models.User) (*models.UserResoponse, error) {
+	err := validation.Validate(user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	user.ID = uuid.NewV4()
@@ -47,13 +47,25 @@ func (s *services) Create(user *models.User) error {
 		user.Password.Scan(string(hashedPassword))
 	}
 
-	err = s.userRepo.Create(user)
+	err = s.userRepo.Create(&user)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &models.UserResoponse{
+		ID:            user.ID,
+		CreatedAt:     user.CreatedAt,
+		Name:          user.Name,
+		Picture:       user.Picture.String,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		PhoneNumber:   user.PhoneNumber.String,
+		Address:       user.Address.String,
+		Role:          user.Role,
+		Provider:      user.Identities.Provider,
+		LastLogin:     user.UserLog.LastLogin.Time,
+	}, nil
 }
 
 func (s *services) Get(users *[]models.User) error {
@@ -66,48 +78,80 @@ func (s *services) Get(users *[]models.User) error {
 	return nil
 }
 
-func (s *services) GetByID(id string, user *models.User) error {
+func (s *services) GetByID(id string) (*models.UserResoponse, error) {
+	user := new(models.User)
 	err := s.userRepo.GetByID(id, user)
 
-	user.Password.Scan("")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &models.UserResoponse{
+		ID:            user.ID,
+		CreatedAt:     user.CreatedAt,
+		Name:          user.Name,
+		Picture:       user.Picture.String,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		PhoneNumber:   user.PhoneNumber.String,
+		Address:       user.Address.String,
+		Role:          user.Role,
+		Provider:      user.Identities.Provider,
+		LastLogin:     user.UserLog.LastLogin.Time,
+	}, nil
 }
 
-func (s *services) Update(user *models.User) error {
+func (s *services) Update(user models.User) (*models.UserResoponse, error) {
 	if user.Password.Valid {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password.String), bcrypt.DefaultCost)
 		user.Password.Scan(string(hashedPassword))
 	}
 
-	err := s.userRepo.Update(user)
+	err := s.userRepo.Update(&user)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &models.UserResoponse{
+		ID:            user.ID,
+		CreatedAt:     user.CreatedAt,
+		Name:          user.Name,
+		Picture:       user.Picture.String,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		PhoneNumber:   user.PhoneNumber.String,
+		Address:       user.Address.String,
+		Role:          user.Role,
+		Provider:      user.Identities.Provider,
+		LastLogin:     user.UserLog.LastLogin.Time,
+	}, nil
 }
 
-func (s *services) Login(user *models.User) error {
+func (s *services) Login(user models.User) (*models.UserLoginResponse, error) {
 	password := user.Password
 
-	err := s.userRepo.GetByEmail(user)
-
+	err := s.userRepo.GetByEmail(&user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(password.String))
-
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	user.UserLog.UserID = user.ID
+
+	go func() {
+		_ = s.userRepo.UpdateUserLog(&user.UserLog)
+	}()
+
+	return &models.UserLoginResponse{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+	}, nil
 }
 
 func (s *services) LoginUsingLine(user *models.User) error {

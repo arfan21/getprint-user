@@ -32,7 +32,9 @@ func main() {
 	route.Use(middleware.Logger())
 
 	route.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, world, thanks")
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message": "Getpring Service User",
+		})
 	})
 
 	route.Static("/shared", "shared")
