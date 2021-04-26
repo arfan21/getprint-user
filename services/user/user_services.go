@@ -81,7 +81,6 @@ func (s *services) Get(users *[]models.User) error {
 func (s *services) GetByID(id string) (*models.UserResoponse, error) {
 	user := new(models.User)
 	err := s.userRepo.GetByID(id, user)
-
 	if err != nil {
 		return nil, err
 	}

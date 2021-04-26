@@ -15,6 +15,10 @@ func GetStatusCode(err error) int {
 		return http.StatusNotFound
 	}
 
+	if err.Error() == models.ErrEmailConflict.Error() {
+		return http.StatusConflict
+	}
+
 	switch err {
 	case models.ErrBadParamInput:
 		return http.StatusBadRequest

@@ -47,7 +47,22 @@ func (repo *mysqlUserRepository) GetByLineID(user *models.User) error {
 }
 
 func (repo *mysqlUserRepository) Update(user *models.User) error {
-	return repo.DB.Save(&user).Error
+	oldData := new(models.User)
+	err := repo.GetByID(user.ID.String(), oldData)
+	if err != nil {
+		return err
+	}
+	err = repo.DB.Model(user).Updates(user).Error
+	if err != nil {
+		return err
+	}
+
+	user.CreatedAt = oldData.CreatedAt
+	user.Role = oldData.Role
+	user.Identities.Provider = oldData.Identities.Provider
+	user.UserLog.LastLogin.Scan(oldData.UserLog.LastLogin.Time)
+
+	return nil
 }
 
 func (repo *mysqlUserRepository) UpdateUserLog(userLog *models.UserLog) error {

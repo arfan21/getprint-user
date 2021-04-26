@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 
 	"github.com/arfan21/getprint-user/models"
@@ -59,12 +60,14 @@ func (s *userController) GetByID(c echo.Context) error {
 }
 
 func (s *userController) Update(c echo.Context) error {
+	id := c.Param("id")
 	user := new(models.User)
-
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
 	}
+
+	user.ID = uuid.FromStringOrNil(id)
 
 	data, err := s.userService.Update(*user)
 	if err != nil {
