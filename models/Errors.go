@@ -8,4 +8,5 @@ var (
 	ErrConflict            = errors.New("error conflict")
 	ErrBadParamInput       = errors.New("error bad request")
 	ErrEmailConflict       = errors.New("error duplicate email")
+	ErrPasswordNotMatch    = errors.New("password not match")
 )

@@ -12,6 +12,7 @@ import (
 	_userRepo "github.com/arfan21/getprint-user/repository/mysql/user"
 	_userSrv "github.com/arfan21/getprint-user/services/user"
 	"github.com/arfan21/getprint-user/utils"
+	"github.com/arfan21/getprint-user/validation"
 )
 
 type UserController interface {
@@ -36,6 +37,12 @@ func (s *userController) Create(c echo.Context) error {
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
+	}
+
+	//validation user
+	err = validation.Validate(*user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Response("error", err, nil))
 	}
 
 	//save user into database
@@ -86,6 +93,7 @@ func (s *userController) Login(c echo.Context) error {
 
 	data, err := s.userService.Login(*user)
 	if err != nil {
+		err = utils.CustomErrors(err)
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
 	}
 

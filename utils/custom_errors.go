@@ -11,5 +11,9 @@ func CustomErrors(err error) error {
 		return models.ErrEmailConflict
 	}
 
+	if strings.Contains(err.Error(), "hashedPassword is not the hash") {
+		return models.ErrPasswordNotMatch
+	}
+
 	return err
 }

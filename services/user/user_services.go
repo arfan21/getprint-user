@@ -9,7 +9,6 @@ import (
 
 	"github.com/arfan21/getprint-user/models"
 	_userRepo "github.com/arfan21/getprint-user/repository/mysql/user"
-	"github.com/arfan21/getprint-user/validation"
 )
 
 type UserService interface {
@@ -29,11 +28,6 @@ func NewUserServices(userRepo _userRepo.UserRepository) UserService {
 }
 
 func (s *services) Create(user models.User) (*models.UserResoponse, error) {
-	err := validation.Validate(user)
-	if err != nil {
-		return nil, err
-	}
-
 	user.ID = uuid.NewV4()
 	user.Identities.UserID = user.ID
 	user.UserLog.UserID = user.ID
@@ -47,7 +41,7 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 		user.Password.Scan(string(hashedPassword))
 	}
 
-	err = s.userRepo.Create(&user)
+	err := s.userRepo.Create(&user)
 
 	if err != nil {
 		return nil, err

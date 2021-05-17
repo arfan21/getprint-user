@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -8,15 +9,12 @@ import (
 )
 
 func GetStatusCode(err error) int {
+	fmt.Println(err.Error())
 	if strings.Contains(err.Error(), "Duplicate") {
 		return http.StatusConflict
 	}
 	if strings.Contains(err.Error(), "not found") {
 		return http.StatusNotFound
-	}
-
-	if err.Error() == models.ErrEmailConflict.Error() {
-		return http.StatusConflict
 	}
 
 	switch err {
@@ -26,6 +24,10 @@ func GetStatusCode(err error) int {
 		return http.StatusConflict
 	case models.ErrNotFound:
 		return http.StatusNotFound
+	case models.ErrEmailConflict:
+		return http.StatusConflict
+	case models.ErrPasswordNotMatch:
+		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
 	}
