@@ -13,7 +13,7 @@ type UserRepository interface {
 	Get(users *[]models.User) error
 	GetByID(id string, user *models.User) error
 	GetByEmail(user *models.User) error
-	GetByLineID(user *models.User) error
+	GetByLineID(lineID string) (*models.User, error)
 	Update(user *models.User) error
 	UpdateUserLog(userLog *models.UserLog) error
 }
@@ -42,8 +42,14 @@ func (repo *mysqlUserRepository) GetByEmail(user *models.User) error {
 	return repo.DB.Where("email = ?", user.Email).First(&user).Error
 }
 
-func (repo *mysqlUserRepository) GetByLineID(user *models.User) error {
-	return repo.DB.Where("user_id_provider=?", user.Identities.UserIDProvider).First(user.Identities).Error
+func (repo *mysqlUserRepository) GetByLineID(lineID string) (*models.User, error) {
+	user := new(models.User)
+	err := repo.DB.Debug().Joins("join identities ON identities.user_id =  users.id").Joins("JOIN user_logs ON user_logs.user_id = users.id").Where("identities.provider_id= ?", lineID).First(user).Scan(user).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (repo *mysqlUserRepository) Update(user *models.User) error {

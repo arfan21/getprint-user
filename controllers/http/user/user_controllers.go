@@ -85,6 +85,7 @@ func (s *userController) Update(c echo.Context) error {
 }
 
 func (s *userController) Login(c echo.Context) error {
+
 	user := new(models.User)
 
 	if err := c.Bind(user); err != nil {
@@ -92,6 +93,21 @@ func (s *userController) Login(c echo.Context) error {
 	}
 
 	data, err := s.userService.Login(*user)
+	if err != nil {
+		err = utils.CustomErrors(err)
+		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))
+	}
+
+	return c.JSON(http.StatusOK, utils.Response("success", nil, data))
+}
+
+func (s *userController) LoginLine(c echo.Context) error {
+	dataLine := new(models.LineVerifyIdTokenResponse)
+	if err := c.Bind(dataLine); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.Response("error", err.Error(), nil))
+	}
+
+	data, err := s.userService.LoginUsingLine(dataLine)
 	if err != nil {
 		err = utils.CustomErrors(err)
 		return c.JSON(utils.GetStatusCode(err), utils.Response("error", err.Error(), nil))

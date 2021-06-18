@@ -16,7 +16,8 @@ type UserService interface {
 	Get(users *[]models.User) error
 	GetByID(id string) (*models.UserResoponse, error)
 	Update(user models.User) (*models.UserResoponse, error)
-	Login(user models.User) (*models.UserLoginResponse, error)
+	Login(user models.User) (*models.UserResoponse, error)
+	LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*models.UserResoponse, error)
 }
 
 type services struct {
@@ -33,7 +34,7 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 	user.UserLog.UserID = user.ID
 	if user.Identities.Provider == "" {
 		user.Identities.Provider = "getprint"
-		user.Identities.UserIDProvider = user.ID.String()
+		user.Identities.ProviderID = user.ID.String()
 	}
 
 	if user.Password.Valid {
@@ -58,6 +59,7 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 		Address:       user.Address.String,
 		Role:          user.Role,
 		Provider:      user.Identities.Provider,
+		ProviderID:    user.Identities.ProviderID,
 		LastLogin:     user.UserLog.LastLogin.Time,
 	}, nil
 }
@@ -90,6 +92,7 @@ func (s *services) GetByID(id string) (*models.UserResoponse, error) {
 		Address:       user.Address.String,
 		Role:          user.Role,
 		Provider:      user.Identities.Provider,
+		ProviderID:    user.Identities.ProviderID,
 		LastLogin:     user.UserLog.LastLogin.Time,
 	}, nil
 }
@@ -117,11 +120,12 @@ func (s *services) Update(user models.User) (*models.UserResoponse, error) {
 		Address:       user.Address.String,
 		Role:          user.Role,
 		Provider:      user.Identities.Provider,
+		ProviderID:    user.Identities.ProviderID,
 		LastLogin:     user.UserLog.LastLogin.Time,
 	}, nil
 }
 
-func (s *services) Login(user models.User) (*models.UserLoginResponse, error) {
+func (s *services) Login(user models.User) (*models.UserResoponse, error) {
 	password := user.Password
 
 	err := s.userRepo.GetByEmail(&user)
@@ -140,22 +144,62 @@ func (s *services) Login(user models.User) (*models.UserLoginResponse, error) {
 		_ = s.userRepo.UpdateUserLog(&user.UserLog)
 	}()
 
-	return &models.UserLoginResponse{
-		ID:    user.ID,
-		Email: user.Email,
-		Role:  user.Role,
+	return &models.UserResoponse{
+		ID:            user.ID,
+		CreatedAt:     user.CreatedAt,
+		Name:          user.Name,
+		Picture:       user.Picture.String,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		PhoneNumber:   user.PhoneNumber.String,
+		Address:       user.Address.String,
+		Role:          user.Role,
+		Provider:      user.Identities.Provider,
+		LastLogin:     user.UserLog.LastLogin.Time,
 	}, nil
 }
 
-func (s *services) LoginUsingLine(user *models.User) error {
-	lineID := user.Identities.UserIDProvider
-	fmt.Println(lineID)
-	err := s.userRepo.GetByLineID(user)
+func (s *services) LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*models.UserResoponse, error) {
+	lineID := dataLine.Sub
+	userData, err := s.userRepo.GetByLineID(lineID)
+
+	fmt.Println("User data :", userData)
+	fmt.Println("User err :", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
+			userData := new(models.User)
 
+			userData.Identities.Provider = "line"
+			userData.Identities.ProviderID = dataLine.Sub
+			userData.Picture.Scan(dataLine.Picture)
+			userData.Name = dataLine.Name
+			userData.Email = fmt.Sprintf("%s@line.com", dataLine.Name)
+
+			return s.Create(*userData)
+
+		} else {
+			return nil, err
 		}
-		return err
+
 	}
-	return nil
+
+	userData.UserLog.UserID = userData.ID
+
+	go func() {
+		_ = s.userRepo.UpdateUserLog(&userData.UserLog)
+	}()
+
+	return &models.UserResoponse{
+		ID:            userData.ID,
+		CreatedAt:     userData.CreatedAt,
+		Name:          userData.Name,
+		Picture:       userData.Picture.String,
+		Email:         userData.Email,
+		EmailVerified: userData.EmailVerified,
+		PhoneNumber:   userData.PhoneNumber.String,
+		Address:       userData.Address.String,
+		Role:          userData.Role,
+		Provider:      userData.Identities.Provider,
+		LastLogin:     userData.UserLog.LastLogin.Time,
+	}, nil
 }
