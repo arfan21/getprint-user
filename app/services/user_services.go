@@ -1,14 +1,13 @@
-package user
+package services
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/arfan21/getprint-user/app/models"
+	"github.com/arfan21/getprint-user/app/repository/mysql"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/arfan21/getprint-user/models"
-	_userRepo "github.com/arfan21/getprint-user/repository/mysql/user"
 )
 
 type UserService interface {
@@ -21,10 +20,10 @@ type UserService interface {
 }
 
 type services struct {
-	userRepo _userRepo.UserRepository
+	userRepo mysql.UserRepository
 }
 
-func NewUserServices(userRepo _userRepo.UserRepository) UserService {
+func NewUserServices(userRepo mysql.UserRepository) UserService {
 	return &services{userRepo}
 }
 

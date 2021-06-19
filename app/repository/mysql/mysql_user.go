@@ -1,11 +1,10 @@
-package user
+package mysql
 
 import (
 	"time"
 
-	"gorm.io/gorm"
-
-	"github.com/arfan21/getprint-user/models"
+	"github.com/arfan21/getprint-user/app/models"
+	"github.com/arfan21/getprint-user/configs"
 )
 
 type UserRepository interface {
@@ -19,32 +18,32 @@ type UserRepository interface {
 }
 
 type mysqlUserRepository struct {
-	DB *gorm.DB
+	DB configs.Client
 }
 
-func NewMysqlUserRepository(DB *gorm.DB) UserRepository {
+func NewMysqlUserRepository(DB configs.Client) UserRepository {
 	return &mysqlUserRepository{DB}
 }
 
 func (repo *mysqlUserRepository) Create(user *models.User) error {
-	return repo.DB.Create(&user).Error
+	return repo.DB.Conn().Create(&user).Error
 }
 
 func (repo *mysqlUserRepository) Get(users *[]models.User) error {
-	return repo.DB.Debug().Find(&users).Error
+	return repo.DB.Conn().Debug().Find(&users).Error
 }
 
 func (repo *mysqlUserRepository) GetByID(id string, user *models.User) error {
-	return repo.DB.Preload("Identities").Preload("UserLog").Where("id=?", id).First(&user).Error
+	return repo.DB.Conn().Preload("Identities").Preload("UserLog").Where("id=?", id).First(&user).Error
 }
 
 func (repo *mysqlUserRepository) GetByEmail(user *models.User) error {
-	return repo.DB.Where("email = ?", user.Email).First(&user).Error
+	return repo.DB.Conn().Where("email = ?", user.Email).First(&user).Error
 }
 
 func (repo *mysqlUserRepository) GetByLineID(lineID string) (*models.User, error) {
 	user := new(models.User)
-	err := repo.DB.Debug().Joins("join identities ON identities.user_id =  users.id").Joins("JOIN user_logs ON user_logs.user_id = users.id").Where("identities.provider_id= ?", lineID).First(user).Scan(user).Error
+	err := repo.DB.Conn().Debug().Joins("join identities ON identities.user_id =  users.id").Joins("JOIN user_logs ON user_logs.user_id = users.id").Where("identities.provider_id= ?", lineID).First(user).Scan(user).Error
 
 	if err != nil {
 		return nil, err
@@ -58,7 +57,7 @@ func (repo *mysqlUserRepository) Update(user *models.User) error {
 	if err != nil {
 		return err
 	}
-	err = repo.DB.Model(user).Updates(user).Error
+	err = repo.DB.Conn().Model(user).Updates(user).Error
 	if err != nil {
 		return err
 	}
@@ -72,12 +71,12 @@ func (repo *mysqlUserRepository) Update(user *models.User) error {
 }
 
 func (repo *mysqlUserRepository) UpdateUserLog(userLog *models.UserLog) error {
-	err := repo.DB.Model(userLog).Where("user_id=?", userLog.UserID).First(userLog).Error
+	err := repo.DB.Conn().Model(userLog).Where("user_id=?", userLog.UserID).First(userLog).Error
 	if err != nil {
 		return err
 	}
 
-	err = repo.DB.Model(userLog).Where("user_id=?", userLog.UserID).Update("last_login", time.Now()).Error
+	err = repo.DB.Conn().Model(userLog).Where("user_id=?", userLog.UserID).Update("last_login", time.Now()).Error
 
 	if err != nil {
 		return err

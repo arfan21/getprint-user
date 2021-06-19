@@ -1,18 +1,18 @@
-package utils
+package helpers
 
 import (
 	"strings"
 
-	"github.com/arfan21/getprint-user/models"
+	"github.com/arfan21/getprint-user/app/constants"
 )
 
 func CustomErrors(err error) error {
 	if strings.Contains(err.Error(), "users.email") {
-		return models.ErrEmailConflict
+		return constants.ErrEmailConflict
 	}
 
 	if strings.Contains(err.Error(), "hashedPassword is not the hash") {
-		return models.ErrPasswordNotMatch
+		return constants.ErrPasswordNotMatch
 	}
 
 	return err

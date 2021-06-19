@@ -1,11 +1,11 @@
-package utils
+package helpers
 
 import (
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/arfan21/getprint-user/models"
+	"github.com/arfan21/getprint-user/app/constants"
 )
 
 func GetStatusCode(err error) int {
@@ -18,15 +18,15 @@ func GetStatusCode(err error) int {
 	}
 
 	switch err {
-	case models.ErrBadParamInput:
+	case constants.ErrBadParamInput:
 		return http.StatusBadRequest
-	case models.ErrConflict:
+	case constants.ErrConflict:
 		return http.StatusConflict
-	case models.ErrNotFound:
+	case constants.ErrNotFound:
 		return http.StatusNotFound
-	case models.ErrEmailConflict:
+	case constants.ErrEmailConflict:
 		return http.StatusConflict
-	case models.ErrPasswordNotMatch:
+	case constants.ErrPasswordNotMatch:
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
