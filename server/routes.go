@@ -4,12 +4,12 @@ import (
 	"github.com/arfan21/getprint-user/app/controllers/http"
 	"github.com/arfan21/getprint-user/app/repository/mysql"
 	"github.com/arfan21/getprint-user/app/services"
-	"github.com/arfan21/getprint-user/configs"
+	"github.com/arfan21/getprint-user/config"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewRouter(mysqlClient configs.Client) *echo.Echo{
+func NewRouter(mysqlClient config.Client) *echo.Echo {
 	route := echo.New()
 	route.Use(middleware.Recover())
 	route.Use(middleware.Logger())

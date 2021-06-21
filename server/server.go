@@ -9,11 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arfan21/getprint-user/configs"
+	"github.com/arfan21/getprint-user/config"
 )
 
 func Start() error {
-	mysqlClient, err := configs.NewClient()
+	mysqlConfig := config.NewConfig()
+	mysqlClient, err := config.NewClient(mysqlConfig.String())
 	if err != nil {
 		return err
 	}
@@ -51,4 +52,3 @@ func Start() error {
 	httpServer.Logger.Print("stopped server gracefully")
 	return nil
 }
-

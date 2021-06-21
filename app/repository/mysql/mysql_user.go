@@ -4,33 +4,28 @@ import (
 	"time"
 
 	"github.com/arfan21/getprint-user/app/models"
-	"github.com/arfan21/getprint-user/configs"
+	"github.com/arfan21/getprint-user/config"
 )
 
 type UserRepository interface {
 	Create(user *models.User) error
-	Get(users *[]models.User) error
 	GetByID(id string, user *models.User) error
 	GetByEmail(user *models.User) error
-	GetByLineID(lineID string) (*models.User, error)
+	GetByProviderID(providerID string) (*models.User, error)
 	Update(user *models.User) error
 	UpdateUserLog(userLog *models.UserLog) error
 }
 
 type mysqlUserRepository struct {
-	DB configs.Client
+	DB config.Client
 }
 
-func NewMysqlUserRepository(DB configs.Client) UserRepository {
+func NewMysqlUserRepository(DB config.Client) UserRepository {
 	return &mysqlUserRepository{DB}
 }
 
 func (repo *mysqlUserRepository) Create(user *models.User) error {
 	return repo.DB.Conn().Create(&user).Error
-}
-
-func (repo *mysqlUserRepository) Get(users *[]models.User) error {
-	return repo.DB.Conn().Debug().Find(&users).Error
 }
 
 func (repo *mysqlUserRepository) GetByID(id string, user *models.User) error {
@@ -41,9 +36,9 @@ func (repo *mysqlUserRepository) GetByEmail(user *models.User) error {
 	return repo.DB.Conn().Where("email = ?", user.Email).First(&user).Error
 }
 
-func (repo *mysqlUserRepository) GetByLineID(lineID string) (*models.User, error) {
+func (repo *mysqlUserRepository) GetByProviderID(providerID string) (*models.User, error) {
 	user := new(models.User)
-	err := repo.DB.Conn().Debug().Joins("join identities ON identities.user_id =  users.id").Joins("JOIN user_logs ON user_logs.user_id = users.id").Where("identities.provider_id= ?", lineID).First(user).Scan(user).Error
+	err := repo.DB.Conn().Debug().Joins("join identities ON identities.user_id =  users.id").Joins("JOIN user_logs ON user_logs.user_id = users.id").Where("identities.provider_id= ?", providerID).First(user).Scan(user).Error
 
 	if err != nil {
 		return nil, err

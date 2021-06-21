@@ -12,7 +12,6 @@ import (
 
 type UserService interface {
 	Create(user models.User) (*models.UserResoponse, error)
-	Get(users *[]models.User) error
 	GetByID(id string) (*models.UserResoponse, error)
 	Update(user models.User) (*models.UserResoponse, error)
 	Login(user models.User) (*models.UserResoponse, error)
@@ -61,16 +60,6 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 		ProviderID:    user.Identities.ProviderID,
 		LastLogin:     user.UserLog.LastLogin.Time,
 	}, nil
-}
-
-func (s *services) Get(users *[]models.User) error {
-	err := s.userRepo.Get(users)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *services) GetByID(id string) (*models.UserResoponse, error) {
@@ -160,7 +149,7 @@ func (s *services) Login(user models.User) (*models.UserResoponse, error) {
 
 func (s *services) LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*models.UserResoponse, error) {
 	lineID := dataLine.Sub
-	userData, err := s.userRepo.GetByLineID(lineID)
+	userData, err := s.userRepo.GetByProviderID(lineID)
 
 	fmt.Println("User data :", userData)
 	fmt.Println("User err :", err)
