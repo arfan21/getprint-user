@@ -13,8 +13,8 @@ import (
 )
 
 func Start() error {
-	mysqlConfig := config.NewConfig()
-	mysqlClient, err := config.NewClient(mysqlConfig.String())
+	mysqlConfig := config.NewMySQLConfig()
+	mysqlClient, err := config.NewMySQLClient(mysqlConfig.String())
 	if err != nil {
 		return err
 	}
