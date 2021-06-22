@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/guregu/null.v4"
 )
 
 func InitializeDatabase() (config.Client, error) {
@@ -20,8 +22,8 @@ func InitializeDatabase() (config.Client, error) {
 		log.Fatal(err)
 	}
 
-	mysqlConfig := config.NewConfigForTest()
-	mysqlClient, err := config.NewClient(mysqlConfig.String())
+	mysqlConfig := config.NewMySQLConfigForTest()
+	mysqlClient, err := config.NewMySQLClient(mysqlConfig.String())
 	if err != nil {
 		return nil, err
 	}
@@ -170,4 +172,23 @@ func (testSuite *MySQLUserTest) TestIupdateUserLog() {
 
 	assert.NoError(testSuite.T(), err)
 	assert.NotEqual(testSuite.T(), testSuite.dataUser.UserLog.LastLogin.Time, userLog.LastLogin)
+}
+
+func (testSuite *MySQLUserTest) TestJupdateUser() {
+	var picture null.String
+	picture.Scan("http://image.com/image.jpg")
+
+	oldData := new(models.User)
+	oldDataByte, _ := json.Marshal(testSuite.dataUser)
+	_ = json.Unmarshal(oldDataByte, oldData)
+
+	testSuite.dataUser.Email = "testUpdateEmail@test.com"
+	testSuite.dataUser.Name = "tesUpdatename"
+	testSuite.dataUser.Picture = picture
+	err := testSuite.userRepo.Update(testSuite.dataUser)
+
+	assert.NoError(testSuite.T(), err)
+	assert.NotEqual(testSuite.T(), oldData.Email, testSuite.dataUser.Email)
+	assert.NotEqual(testSuite.T(), oldData.Name, testSuite.dataUser.Name)
+	assert.NotEqual(testSuite.T(), oldData.Picture.String, testSuite.dataUser.Picture.String)
 }
