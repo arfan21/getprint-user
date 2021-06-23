@@ -40,31 +40,31 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 		user.Password.Scan(string(hashedPassword))
 	}
 
-	err := s.userRepo.Create(&user)
+	createdData, err := s.userRepo.Create(user)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &models.UserResoponse{
-		ID:            user.ID,
-		CreatedAt:     user.CreatedAt,
-		Name:          user.Name,
-		Picture:       user.Picture.String,
-		Email:         user.Email,
-		EmailVerified: user.EmailVerified,
-		PhoneNumber:   user.PhoneNumber.String,
-		Address:       user.Address.String,
-		Role:          user.Role,
-		Provider:      user.Identities.Provider,
-		ProviderID:    user.Identities.ProviderID,
-		LastLogin:     user.UserLog.LastLogin.Time,
+		ID:            createdData.ID,
+		CreatedAt:     createdData.CreatedAt,
+		Name:          createdData.Name,
+		Picture:       createdData.Picture.String,
+		Email:         createdData.Email,
+		EmailVerified: createdData.EmailVerified,
+		PhoneNumber:   createdData.PhoneNumber.String,
+		Address:       createdData.Address.String,
+		Role:          createdData.Role,
+		Provider:      createdData.Identities.Provider,
+		ProviderID:    createdData.Identities.ProviderID,
+		LastLogin:     createdData.UserLog.LastLogin.Time,
 	}, nil
 }
 
 func (s *services) GetByID(id string) (*models.UserResoponse, error) {
-	user := new(models.User)
-	err := s.userRepo.GetByID(id, user)
+	uuidFromString := uuid.FromStringOrNil(id)
+	user, err := s.userRepo.GetByID(uuidFromString)
 	if err != nil {
 		return nil, err
 	}
@@ -114,36 +114,34 @@ func (s *services) Update(user models.User) (*models.UserResoponse, error) {
 }
 
 func (s *services) Login(user models.User) (*models.UserResoponse, error) {
-	password := user.Password
-
-	err := s.userRepo.GetByEmail(&user)
+	dataUser, err := s.userRepo.GetByEmail(user.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(password.String))
+	err = bcrypt.CompareHashAndPassword([]byte(dataUser.Password.String), []byte(user.Password.String))
 	if err != nil {
 		return nil, err
 	}
 
-	user.UserLog.UserID = user.ID
+	dataUser.UserLog.UserID = user.ID
 
 	go func() {
-		_ = s.userRepo.UpdateUserLog(&user.UserLog)
+		_ = s.userRepo.UpdateUserLog(&dataUser.UserLog)
 	}()
 
 	return &models.UserResoponse{
-		ID:            user.ID,
-		CreatedAt:     user.CreatedAt,
-		Name:          user.Name,
-		Picture:       user.Picture.String,
-		Email:         user.Email,
-		EmailVerified: user.EmailVerified,
-		PhoneNumber:   user.PhoneNumber.String,
-		Address:       user.Address.String,
-		Role:          user.Role,
-		Provider:      user.Identities.Provider,
-		LastLogin:     user.UserLog.LastLogin.Time,
+		ID:            dataUser.ID,
+		CreatedAt:     dataUser.CreatedAt,
+		Name:          dataUser.Name,
+		Picture:       dataUser.Picture.String,
+		Email:         dataUser.Email,
+		EmailVerified: dataUser.EmailVerified,
+		PhoneNumber:   dataUser.PhoneNumber.String,
+		Address:       dataUser.Address.String,
+		Role:          dataUser.Role,
+		Provider:      dataUser.Identities.Provider,
+		LastLogin:     dataUser.UserLog.LastLogin.Time,
 	}, nil
 }
 
@@ -151,8 +149,6 @@ func (s *services) LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*
 	lineID := dataLine.Sub
 	userData, err := s.userRepo.GetByProviderID(lineID)
 
-	fmt.Println("User data :", userData)
-	fmt.Println("User err :", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			userData := new(models.User)

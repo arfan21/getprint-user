@@ -5,12 +5,13 @@ import (
 
 	"github.com/arfan21/getprint-user/app/models"
 	"github.com/arfan21/getprint-user/config"
+	uuid "github.com/satori/go.uuid"
 )
 
 type UserRepository interface {
-	Create(user *models.User) error
-	GetByID(id string, user *models.User) error
-	GetByEmail(user *models.User) error
+	Create(user models.User) (*models.User, error)
+	GetByID(id uuid.UUID) (*models.User, error)
+	GetByEmail(email string) (*models.User, error)
 	GetByProviderID(providerID string) (*models.User, error)
 	Update(user *models.User) error
 	UpdateUserLog(userLog *models.UserLog) error
@@ -24,16 +25,31 @@ func NewMysqlUserRepository(DB config.Client) UserRepository {
 	return &mysqlUserRepository{DB}
 }
 
-func (repo *mysqlUserRepository) Create(user *models.User) error {
-	return repo.DB.Conn().Create(&user).Error
+func (repo *mysqlUserRepository) Create(user models.User) (*models.User, error) {
+	err := repo.DB.Conn().Create(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, err
 }
 
-func (repo *mysqlUserRepository) GetByID(id string, user *models.User) error {
-	return repo.DB.Conn().Preload("Identities").Preload("UserLog").Where("id=?", id).First(&user).Error
+func (repo *mysqlUserRepository) GetByID(id uuid.UUID) (*models.User, error) {
+	user := new(models.User)
+	err := repo.DB.Conn().Preload("Identities").Preload("UserLog").Where("id=?", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
-func (repo *mysqlUserRepository) GetByEmail(user *models.User) error {
-	return repo.DB.Conn().Where("email = ?", user.Email).First(&user).Error
+func (repo *mysqlUserRepository) GetByEmail(email string) (*models.User, error) {
+	user := new(models.User)
+	err := repo.DB.Conn().Where("email = ?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (repo *mysqlUserRepository) GetByProviderID(providerID string) (*models.User, error) {
@@ -47,8 +63,7 @@ func (repo *mysqlUserRepository) GetByProviderID(providerID string) (*models.Use
 }
 
 func (repo *mysqlUserRepository) Update(user *models.User) error {
-	oldData := new(models.User)
-	err := repo.GetByID(user.ID.String(), oldData)
+	oldData, err := repo.GetByID(user.ID)
 	if err != nil {
 		return err
 	}

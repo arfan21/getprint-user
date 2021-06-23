@@ -64,7 +64,7 @@ func (testSuit *MySQLUserTest) TearDownSuite() {
 func (testSuite *MySQLUserTest) TestAcreateSuccess() {
 
 	newUUID := uuid.NewV4()
-	dummyPayload := &models.User{
+	dummyPayload := models.User{
 		ID:            newUUID,
 		Name:          "tesname",
 		Email:         "test@test.com",
@@ -80,16 +80,16 @@ func (testSuite *MySQLUserTest) TestAcreateSuccess() {
 		},
 	}
 
-	err := testSuite.userRepo.Create(dummyPayload)
+	createdData, err := testSuite.userRepo.Create(dummyPayload)
 
 	assert.NoError(testSuite.T(), err)
-	assert.NotZero(testSuite.T(), dummyPayload.Identities.ID)
-	assert.NotZero(testSuite.T(), dummyPayload.UserLog.ID)
-	testSuite.dataUser = dummyPayload
+	assert.NotZero(testSuite.T(), createdData.Identities.ID)
+	assert.NotZero(testSuite.T(), createdData.UserLog.ID)
+	testSuite.dataUser = createdData
 }
 func (testSuite *MySQLUserTest) TestBcreateFailDuplicateEmail() {
 	newUUID := uuid.NewV4()
-	dummyPayload := &models.User{
+	dummyPayload := models.User{
 		ID:            newUUID,
 		Name:          "tesname",
 		Email:         "test@test.com",
@@ -105,16 +105,14 @@ func (testSuite *MySQLUserTest) TestBcreateFailDuplicateEmail() {
 		},
 	}
 
-	err := testSuite.userRepo.Create(dummyPayload)
+	_, err := testSuite.userRepo.Create(dummyPayload)
 
 	assert.Error(testSuite.T(), err)
 	assert.Equal(testSuite.T(), true, strings.Contains(err.Error(), "Duplicate"))
 }
 
 func (testSuite *MySQLUserTest) TestCgetUserByIDSuccess() {
-	response := new(models.User)
-
-	err := testSuite.userRepo.GetByID(testSuite.dataUser.ID.String(), response)
+	response, err := testSuite.userRepo.GetByID(testSuite.dataUser.ID)
 
 	assert.NoError(testSuite.T(), err)
 	assert.Equal(testSuite.T(), testSuite.dataUser.ID.String(), response.ID.String())
@@ -122,19 +120,15 @@ func (testSuite *MySQLUserTest) TestCgetUserByIDSuccess() {
 }
 
 func (testSuite *MySQLUserTest) TestDgetUserByIDNotFound() {
-	response := new(models.User)
-
-	err := testSuite.userRepo.GetByID("", response)
+	response, err := testSuite.userRepo.GetByID(uuid.UUID{})
 
 	assert.Error(testSuite.T(), err)
 	assert.Equal(testSuite.T(), true, strings.Contains(err.Error(), "not found"))
-	assert.Equal(testSuite.T(), uuid.NullUUID{}.UUID, response.ID)
+	assert.Nil(testSuite.T(), response)
 }
 
 func (testSuite *MySQLUserTest) TestEgetUserByEmailSuccess() {
-	response := new(models.User)
-	response.Email = testSuite.dataUser.Email
-	err := testSuite.userRepo.GetByEmail(response)
+	response, err := testSuite.userRepo.GetByEmail(testSuite.dataUser.Email)
 
 	assert.NoError(testSuite.T(), err)
 	assert.Equal(testSuite.T(), testSuite.dataUser.ID.String(), response.ID.String())
@@ -142,12 +136,11 @@ func (testSuite *MySQLUserTest) TestEgetUserByEmailSuccess() {
 }
 
 func (testSuite *MySQLUserTest) TestFgetUserByEmailNotFound() {
-	response := new(models.User)
-	err := testSuite.userRepo.GetByEmail(response)
+	response, err := testSuite.userRepo.GetByEmail("")
 
 	assert.Error(testSuite.T(), err)
 	assert.Equal(testSuite.T(), true, strings.Contains(err.Error(), "not found"))
-	assert.Equal(testSuite.T(), uuid.NullUUID{}.UUID, response.ID)
+	assert.Nil(testSuite.T(), response)
 }
 
 func (testSuite *MySQLUserTest) TestGgetUserByProviderIDSuccess() {
