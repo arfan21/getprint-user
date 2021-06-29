@@ -3,7 +3,7 @@ package helpers
 import (
 	"strings"
 
-	"github.com/arfan21/getprint-user/app/constants"
+	"github.com/arfan21/getprint-user/app/constant"
 )
 
 func CustomErrors(err error) error {

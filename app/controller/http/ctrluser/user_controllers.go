@@ -1,4 +1,4 @@
-package http
+package ctrluser
 
 import (
 	"net/http"
@@ -26,7 +26,7 @@ type userController struct {
 	userService serviceuser.UserService
 }
 
-func NewUserController(userService serviceuser.UserService) UserController {
+func New(userService serviceuser.UserService) UserController {
 	return &userController{userService}
 }
 

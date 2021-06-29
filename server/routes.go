@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/arfan21/getprint-user/app/controllers/http"
+	"github.com/arfan21/getprint-user/app/controller/http/ctrluser"
 	"github.com/arfan21/getprint-user/app/repository/mysql/mysqluser"
 	"github.com/arfan21/getprint-user/app/service/serviceuser"
 	"github.com/arfan21/getprint-user/config/database/mysql"
@@ -18,7 +18,7 @@ func NewRouter(mysqlClient mysql.Client) *echo.Echo {
 	// routing order
 	userRepo := mysqluser.New(mysqlClient)
 	userSRv := serviceuser.New(userRepo)
-	userCtrl := http.NewUserController(userSRv)
+	userCtrl := ctrluser.New(userSRv)
 
 	apiUser := apiV1.Group("/user")
 	apiUser.POST("", userCtrl.Create)
