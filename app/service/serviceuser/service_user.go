@@ -1,32 +1,33 @@
-package services
+package serviceuser
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/arfan21/getprint-user/app/models"
-	"github.com/arfan21/getprint-user/app/repository/mysql"
+	"github.com/arfan21/getprint-user/app/model/modelresponse"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
+	"github.com/arfan21/getprint-user/app/repository/mysql/mysqluser"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
-	Create(user models.User) (*models.UserResoponse, error)
-	GetByID(id string) (*models.UserResoponse, error)
-	Update(user models.User) (*models.UserResoponse, error)
-	Login(user models.User) (*models.UserResoponse, error)
-	LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*models.UserResoponse, error)
+	Create(user modeluser.User) (*modelresponse.User, error)
+	GetByID(id string) (*modelresponse.User, error)
+	Update(user modeluser.User) (*modelresponse.User, error)
+	Login(user modeluser.User) (*modelresponse.User, error)
+	LoginUsingLine(dataLine *modelresponse.LineVerifyIdToken) (*modelresponse.User, error)
 }
 
 type services struct {
-	userRepo mysql.UserRepository
+	userRepo mysqluser.UserRepository
 }
 
-func NewUserServices(userRepo mysql.UserRepository) UserService {
+func New(userRepo mysqluser.UserRepository) UserService {
 	return &services{userRepo}
 }
 
-func (s *services) Create(user models.User) (*models.UserResoponse, error) {
+func (s *services) Create(user modeluser.User) (*modelresponse.User, error) {
 	user.ID = uuid.NewV4()
 	user.Identities.UserID = user.ID
 	user.UserLog.UserID = user.ID
@@ -46,30 +47,19 @@ func (s *services) Create(user models.User) (*models.UserResoponse, error) {
 		return nil, err
 	}
 
-	return &models.UserResoponse{
-		ID:            createdData.ID,
-		CreatedAt:     createdData.CreatedAt,
-		Name:          createdData.Name,
-		Picture:       createdData.Picture.String,
-		Email:         createdData.Email,
-		EmailVerified: createdData.EmailVerified,
-		PhoneNumber:   createdData.PhoneNumber.String,
-		Address:       createdData.Address.String,
-		Role:          createdData.Role,
-		Provider:      createdData.Identities.Provider,
-		ProviderID:    createdData.Identities.ProviderID,
-		LastLogin:     createdData.UserLog.LastLogin.Time,
-	}, nil
+	responseUser := new(modelresponse.User)
+	responseUser.Set(*createdData)
+	return responseUser, nil
 }
 
-func (s *services) GetByID(id string) (*models.UserResoponse, error) {
+func (s *services) GetByID(id string) (*modelresponse.User, error) {
 	uuidFromString := uuid.FromStringOrNil(id)
 	user, err := s.userRepo.GetByID(uuidFromString)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.UserResoponse{
+	return &modelresponse.User{
 		ID:            user.ID,
 		CreatedAt:     user.CreatedAt,
 		Name:          user.Name,
@@ -85,7 +75,7 @@ func (s *services) GetByID(id string) (*models.UserResoponse, error) {
 	}, nil
 }
 
-func (s *services) Update(user models.User) (*models.UserResoponse, error) {
+func (s *services) Update(user modeluser.User) (*modelresponse.User, error) {
 	if user.Password.Valid {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password.String), bcrypt.DefaultCost)
 		user.Password.Scan(string(hashedPassword))
@@ -97,7 +87,7 @@ func (s *services) Update(user models.User) (*models.UserResoponse, error) {
 		return nil, err
 	}
 
-	return &models.UserResoponse{
+	return &modelresponse.User{
 		ID:            user.ID,
 		CreatedAt:     user.CreatedAt,
 		Name:          user.Name,
@@ -113,7 +103,7 @@ func (s *services) Update(user models.User) (*models.UserResoponse, error) {
 	}, nil
 }
 
-func (s *services) Login(user models.User) (*models.UserResoponse, error) {
+func (s *services) Login(user modeluser.User) (*modelresponse.User, error) {
 	dataUser, err := s.userRepo.GetByEmail(user.Email)
 	if err != nil {
 		return nil, err
@@ -130,7 +120,7 @@ func (s *services) Login(user models.User) (*models.UserResoponse, error) {
 		_ = s.userRepo.UpdateUserLog(&dataUser.UserLog)
 	}()
 
-	return &models.UserResoponse{
+	return &modelresponse.User{
 		ID:            dataUser.ID,
 		CreatedAt:     dataUser.CreatedAt,
 		Name:          dataUser.Name,
@@ -145,13 +135,13 @@ func (s *services) Login(user models.User) (*models.UserResoponse, error) {
 	}, nil
 }
 
-func (s *services) LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*models.UserResoponse, error) {
+func (s *services) LoginUsingLine(dataLine *modelresponse.LineVerifyIdToken) (*modelresponse.User, error) {
 	lineID := dataLine.Sub
 	userData, err := s.userRepo.GetByProviderID(lineID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			userData := new(models.User)
+			userData := new(modeluser.User)
 
 			userData.Identities.Provider = "line"
 			userData.Identities.ProviderID = dataLine.Sub
@@ -173,7 +163,7 @@ func (s *services) LoginUsingLine(dataLine *models.LineVerifyIdTokenResponse) (*
 		_ = s.userRepo.UpdateUserLog(&userData.UserLog)
 	}()
 
-	return &models.UserResoponse{
+	return &modelresponse.User{
 		ID:            userData.ID,
 		CreatedAt:     userData.CreatedAt,
 		Name:          userData.Name,

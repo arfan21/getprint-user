@@ -1,4 +1,4 @@
-package mysql
+package mysqluser
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arfan21/getprint-user/app/models"
-	"github.com/arfan21/getprint-user/config"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
+	"github.com/arfan21/getprint-user/config/database/mysql"
 	"github.com/joho/godotenv"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -16,14 +16,14 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
-func InitializeDatabase() (config.Client, error) {
-	err := godotenv.Load("../../../.env")
+func InitializeDatabase() (mysql.Client, error) {
+	err := godotenv.Load("../../../../.env")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	mysqlConfig := config.NewMySQLConfigForTest()
-	mysqlClient, err := config.NewMySQLClient(mysqlConfig.String())
+	mysqlConfig := mysql.NewMySQLConfigForTest()
+	mysqlClient, err := mysql.NewMySQLClient(mysqlConfig.String())
 	if err != nil {
 		return nil, err
 	}
@@ -33,9 +33,9 @@ func InitializeDatabase() (config.Client, error) {
 
 type MySQLUserTest struct {
 	suite.Suite
-	mysqlClient config.Client
+	mysqlClient mysql.Client
 	userRepo    UserRepository
-	dataUser    *models.User
+	dataUser    *modeluser.User
 }
 
 func TestMySQLUserTest(t *testing.T) {
@@ -44,8 +44,8 @@ func TestMySQLUserTest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db.Conn().Unscoped().Where("1 = 1").Delete(&models.User{})
-	userRepo := NewMysqlUserRepository(db)
+	db.Conn().Unscoped().Where("1 = 1").Delete(&modeluser.User{})
+	userRepo := New(db)
 
 	mySQLUserTest := &MySQLUserTest{
 		mysqlClient: db,
@@ -64,18 +64,18 @@ func (testSuit *MySQLUserTest) TearDownSuite() {
 func (testSuite *MySQLUserTest) TestAcreateSuccess() {
 
 	newUUID := uuid.NewV4()
-	dummyPayload := models.User{
+	dummyPayload := modeluser.User{
 		ID:            newUUID,
 		Name:          "tesname",
 		Email:         "test@test.com",
 		EmailVerified: false,
 		Role:          "buyer",
-		Identities: models.Identities{
+		Identities: modeluser.Identities{
 			UserID:     newUUID,
 			Provider:   "getprint",
 			ProviderID: newUUID.String(),
 		},
-		UserLog: models.UserLog{
+		UserLog: modeluser.UserLog{
 			UserID: newUUID,
 		},
 	}
@@ -89,18 +89,18 @@ func (testSuite *MySQLUserTest) TestAcreateSuccess() {
 }
 func (testSuite *MySQLUserTest) TestBcreateFailDuplicateEmail() {
 	newUUID := uuid.NewV4()
-	dummyPayload := models.User{
+	dummyPayload := modeluser.User{
 		ID:            newUUID,
 		Name:          "tesname",
 		Email:         "test@test.com",
 		EmailVerified: false,
 		Role:          "buyer",
-		Identities: models.Identities{
+		Identities: modeluser.Identities{
 			UserID:     newUUID,
 			Provider:   "getprint",
 			ProviderID: newUUID.String(),
 		},
-		UserLog: models.UserLog{
+		UserLog: modeluser.UserLog{
 			UserID: newUUID,
 		},
 	}
@@ -171,7 +171,7 @@ func (testSuite *MySQLUserTest) TestJupdateUser() {
 	var picture null.String
 	picture.Scan("http://image.com/image.jpg")
 
-	oldData := new(models.User)
+	oldData := new(modeluser.User)
 	oldDataByte, _ := json.Marshal(testSuite.dataUser)
 	_ = json.Unmarshal(oldDataByte, oldData)
 

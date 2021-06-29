@@ -1,12 +1,13 @@
-package services
+package serviceuser
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"github.com/arfan21/getprint-user/app/models"
-	"github.com/arfan21/getprint-user/app/repository/mysql"
+	"github.com/arfan21/getprint-user/app/model/modelresponse"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
+	"github.com/arfan21/getprint-user/app/repository/mysql/mysqluser"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,13 +18,13 @@ import (
 type UserSrvTest struct {
 	suite.Suite
 	userSrv      UserService
-	userRepoMock *mysql.MysqlUserRepositoryMock
-	dummyPayload *models.User
+	userRepoMock *mysqluser.MysqlUserRepositoryMock
+	dummyPayload *modeluser.User
 }
 
 func TestUserServices(t *testing.T) {
-	userRepo := &mysql.MysqlUserRepositoryMock{}
-	userSrv := NewUserServices(userRepo)
+	userRepo := &mysqluser.MysqlUserRepositoryMock{}
+	userSrv := New(userRepo)
 
 	userSrvTest := &UserSrvTest{
 		userSrv:      userSrv,
@@ -34,17 +35,17 @@ func TestUserServices(t *testing.T) {
 }
 
 func (testSuite *UserSrvTest) TestACreateFail() {
-	dummyPayload := models.User{
+	dummyPayload := modeluser.User{
 		Name:          "tesname",
 		EmailVerified: false,
 		Role:          "buyer",
-		Identities: models.Identities{
+		Identities: modeluser.Identities{
 			Provider: "getprint",
 		},
-		UserLog: models.UserLog{},
+		UserLog: modeluser.UserLog{},
 	}
 
-	testSuite.userRepoMock.Mock.On("Create", mock.AnythingOfType("models.User")).Return(dummyPayload).Once()
+	testSuite.userRepoMock.Mock.On("Create", mock.AnythingOfType("modeluser.User")).Return(dummyPayload).Once()
 
 	res, err := testSuite.userSrv.Create(dummyPayload)
 	assert.Error(testSuite.T(), err)
@@ -52,17 +53,17 @@ func (testSuite *UserSrvTest) TestACreateFail() {
 	assert.Nil(testSuite.T(), res)
 }
 func (testSuite *UserSrvTest) TestBCreateSuccess() {
-	dummyPayload := models.User{
+	dummyPayload := modeluser.User{
 		Name:          "tesname",
 		Email:         "test@test.com",
 		EmailVerified: false,
 		Role:          "buyer",
-		Identities: models.Identities{
+		Identities: modeluser.Identities{
 			Provider: "getprint",
 		},
-		UserLog: models.UserLog{},
+		UserLog: modeluser.UserLog{},
 	}
-	testSuite.userRepoMock.Mock.On("Create", mock.Anything).Return(dummyPayload)
+	testSuite.userRepoMock.Mock.On("Create", mock.AnythingOfType("modeluser.User")).Return(dummyPayload)
 
 	res, err := testSuite.userSrv.Create(dummyPayload)
 	assert.NoError(testSuite.T(), err)
@@ -105,7 +106,7 @@ func (testSuite *UserSrvTest) TestDGetByIDFail() {
 
 func (testSuite *UserSrvTest) TestEUpdateFail() {
 	dummyPayloadByte, _ := json.Marshal(testSuite.dummyPayload)
-	dummyPayload := new(models.User)
+	dummyPayload := new(modeluser.User)
 	_ = json.Unmarshal(dummyPayloadByte, dummyPayload)
 
 	dummyPayload.Email = ""
@@ -121,7 +122,7 @@ func (testSuite *UserSrvTest) TestEUpdateFail() {
 
 func (testSuite *UserSrvTest) TestFUpdateSuccess() {
 	dummyPayloadByte, _ := json.Marshal(testSuite.dummyPayload)
-	dummyPayload := new(models.User)
+	dummyPayload := new(modeluser.User)
 	_ = json.Unmarshal(dummyPayloadByte, dummyPayload)
 
 	dummyPayload.Email = "testUpdateEmail@tes.com"
@@ -143,7 +144,7 @@ func (testSuite *UserSrvTest) TestGLoginSuccess() {
 	testSuite.userRepoMock.Mock.On("GetByEmail", testSuite.dummyPayload.Email).Return(testSuite.dummyPayload).Once()
 
 	dummyPayloadByte, _ := json.Marshal(testSuite.dummyPayload)
-	dummyPayload := new(models.User)
+	dummyPayload := new(modeluser.User)
 	_ = json.Unmarshal(dummyPayloadByte, dummyPayload)
 	dummyPayload.Password.Scan("123qweasd")
 
@@ -158,7 +159,7 @@ func (testSuite *UserSrvTest) TestHLoginFailed() {
 	testSuite.userRepoMock.Mock.On("GetByEmail", testSuite.dummyPayload.Email).Return(testSuite.dummyPayload).Once()
 
 	dummyPayloadByte, _ := json.Marshal(testSuite.dummyPayload)
-	dummyPayload := new(models.User)
+	dummyPayload := new(modeluser.User)
 	_ = json.Unmarshal(dummyPayloadByte, dummyPayload)
 	dummyPayload.Password.Scan("qwe123asd")
 
@@ -168,7 +169,7 @@ func (testSuite *UserSrvTest) TestHLoginFailed() {
 }
 
 func (testSuite *UserSrvTest) TestILoginLineAlreadyRegisteredSuccess() {
-	dummyPayload := &models.LineVerifyIdTokenResponse{
+	dummyPayload := &modelresponse.LineVerifyIdToken{
 		Sub: testSuite.dummyPayload.ID.String(),
 	}
 	testSuite.userRepoMock.Mock.On("GetByProviderID", dummyPayload.Sub).Return(testSuite.dummyPayload).Once()
@@ -181,21 +182,21 @@ func (testSuite *UserSrvTest) TestILoginLineAlreadyRegisteredSuccess() {
 
 func (testSuite *UserSrvTest) TestJLoginLineNotRegisteredSuccess() {
 	newProviderID := "eyhhheeeasdawawdmmma822lascm"
-	dummyPayload := &models.LineVerifyIdTokenResponse{
+	dummyPayload := &modelresponse.LineVerifyIdToken{
 		Sub:     newProviderID,
 		Name:    "testname",
 		Picture: "https://image.com/image.jpg",
 	}
 	testSuite.userRepoMock.Mock.On("GetByProviderID", dummyPayload.Sub).Return(testSuite.dummyPayload).Once()
 
-	dummyPayloadRegistered := models.User{
+	dummyPayloadRegistered := modeluser.User{
 		Name:  "testname",
 		Email: "testname@line.com",
-		Identities: models.Identities{
+		Identities: modeluser.Identities{
 			Provider:   "line",
 			ProviderID: newProviderID,
 		},
-		UserLog: models.UserLog{},
+		UserLog: modeluser.UserLog{},
 	}
 	dummyPayloadRegistered.Picture.Scan(dummyPayload.Picture)
 	testSuite.userRepoMock.Mock.On("Create", mock.Anything).Return(dummyPayloadRegistered).Once()

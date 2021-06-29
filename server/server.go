@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arfan21/getprint-user/config"
+	"github.com/arfan21/getprint-user/config/database/mysql"
 )
 
 func Start() error {
-	mysqlConfig := config.NewMySQLConfig()
-	mysqlClient, err := config.NewMySQLClient(mysqlConfig.String())
+	mysqlConfig := mysql.NewMySQLConfig()
+	mysqlClient, err := mysql.NewMySQLClient(mysqlConfig.String())
 	if err != nil {
 		return err
 	}

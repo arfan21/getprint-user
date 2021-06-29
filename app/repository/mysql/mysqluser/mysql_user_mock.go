@@ -1,9 +1,9 @@
-package mysql
+package mysqluser
 
 import (
 	"errors"
 
-	"github.com/arfan21/getprint-user/app/models"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/mock"
 )
@@ -12,12 +12,12 @@ type MysqlUserRepositoryMock struct {
 	Mock mock.Mock
 }
 
-func (m *MysqlUserRepositoryMock) Create(user models.User) (*models.User, error) {
+func (m *MysqlUserRepositoryMock) Create(user modeluser.User) (*modeluser.User, error) {
 	arg := m.Mock.Called(user)
 	if arg.Get(0) == nil {
 		return nil, errors.New("failed create user")
 	} else {
-		newUser := arg.Get(0).(models.User)
+		newUser := arg.Get(0).(modeluser.User)
 		newUser.ID = user.ID
 		newUser.Identities.ProviderID = user.Identities.ProviderID
 		newUser.Identities.UserID = user.Identities.UserID
@@ -29,22 +29,22 @@ func (m *MysqlUserRepositoryMock) Create(user models.User) (*models.User, error)
 		return &newUser, nil
 	}
 }
-func (m *MysqlUserRepositoryMock) GetByID(id uuid.UUID) (*models.User, error) {
+func (m *MysqlUserRepositoryMock) GetByID(id uuid.UUID) (*modeluser.User, error) {
 	arg := m.Mock.Called(id)
 	if arg.Get(0) == nil {
 		return nil, errors.New("failed get user")
 	} else {
-		user := arg.Get(0).(models.User)
+		user := arg.Get(0).(modeluser.User)
 		return &user, nil
 	}
 }
 
-func (m *MysqlUserRepositoryMock) GetByEmail(email string) (*models.User, error) {
+func (m *MysqlUserRepositoryMock) GetByEmail(email string) (*modeluser.User, error) {
 	arg := m.Mock.Called(email)
 	if arg.Get(0) == nil {
 		return nil, errors.New("failed get user")
 	} else {
-		user := arg.Get(0).(*models.User)
+		user := arg.Get(0).(*modeluser.User)
 		if user.Email == "" {
 			return nil, errors.New("need email")
 		}
@@ -57,12 +57,12 @@ func (m *MysqlUserRepositoryMock) GetByEmail(email string) (*models.User, error)
 	}
 }
 
-func (m *MysqlUserRepositoryMock) GetByProviderID(providerID string) (*models.User, error) {
+func (m *MysqlUserRepositoryMock) GetByProviderID(providerID string) (*modeluser.User, error) {
 	arg := m.Mock.Called(providerID)
 	if arg.Get(0) == nil {
 		return nil, errors.New("failed get user")
 	} else {
-		user := arg.Get(0).(*models.User)
+		user := arg.Get(0).(*modeluser.User)
 
 		if user.Identities.ProviderID != providerID {
 			return nil, errors.New("providerID not found")
@@ -72,12 +72,12 @@ func (m *MysqlUserRepositoryMock) GetByProviderID(providerID string) (*models.Us
 	}
 }
 
-func (m *MysqlUserRepositoryMock) Update(user *models.User) error {
+func (m *MysqlUserRepositoryMock) Update(user *modeluser.User) error {
 	arg := m.Mock.Called(user)
 	if arg.Get(0) == nil {
 		return errors.New("failed update user")
 	} else {
-		newUser := arg.Get(0).(models.User)
+		newUser := arg.Get(0).(modeluser.User)
 		newUser.ID = user.ID
 		if newUser.Email == "" {
 			return errors.New("need email")
@@ -86,6 +86,6 @@ func (m *MysqlUserRepositoryMock) Update(user *models.User) error {
 		return nil
 	}
 }
-func (m *MysqlUserRepositoryMock) UpdateUserLog(userLog *models.UserLog) error {
+func (m *MysqlUserRepositoryMock) UpdateUserLog(userLog *modeluser.UserLog) error {
 	return nil
 }

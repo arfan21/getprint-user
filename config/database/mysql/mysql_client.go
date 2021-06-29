@@ -1,10 +1,10 @@
-package config
+package mysql
 
 import (
 	"log"
 	"strings"
 
-	"github.com/arfan21/getprint-user/app/models"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -37,7 +37,7 @@ func NewMySQLClient(DBURL string) (Client, error) {
 
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Identities{}, &models.UserLog{})
+	err = db.AutoMigrate(&modeluser.User{}, &modeluser.Identities{}, &modeluser.UserLog{})
 	if err != nil {
 
 		return nil, err

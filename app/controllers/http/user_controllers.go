@@ -3,13 +3,14 @@ package http
 import (
 	"net/http"
 
-	"github.com/arfan21/getprint-user/app/services"
+	"github.com/arfan21/getprint-user/app/model/modelresponse"
+	"github.com/arfan21/getprint-user/app/model/modeluser"
+	"github.com/arfan21/getprint-user/app/service/serviceuser"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/arfan21/getprint-user/app/helpers"
-	"github.com/arfan21/getprint-user/app/models"
 	"github.com/arfan21/getprint-user/validation"
 )
 
@@ -22,15 +23,15 @@ type UserController interface {
 }
 
 type userController struct {
-	userService services.UserService
+	userService serviceuser.UserService
 }
 
-func NewUserController(userService services.UserService) UserController {
+func NewUserController(userService serviceuser.UserService) UserController {
 	return &userController{userService}
 }
 
 func (s *userController) Create(c echo.Context) error {
-	user := new(models.User)
+	user := new(modeluser.User)
 
 	//decoded request body
 	err := c.Bind(user)
@@ -67,7 +68,7 @@ func (s *userController) GetByID(c echo.Context) error {
 
 func (s *userController) Update(c echo.Context) error {
 	id := c.Param("id")
-	user := new(models.User)
+	user := new(modeluser.User)
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, helpers.Response("error", err.Error(), nil))
@@ -85,7 +86,7 @@ func (s *userController) Update(c echo.Context) error {
 
 func (s *userController) Login(c echo.Context) error {
 
-	user := new(models.User)
+	user := new(modeluser.User)
 
 	if err := c.Bind(user); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, helpers.Response("error", err.Error(), nil))
@@ -101,7 +102,7 @@ func (s *userController) Login(c echo.Context) error {
 }
 
 func (s *userController) LoginLine(c echo.Context) error {
-	dataLine := new(models.LineVerifyIdTokenResponse)
+	dataLine := new(modelresponse.LineVerifyIdToken)
 	if err := c.Bind(dataLine); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, helpers.Response("error", err.Error(), nil))
 	}

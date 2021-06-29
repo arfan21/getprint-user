@@ -1,12 +1,13 @@
-package models
+package modelresponse
 
 import (
 	"time"
 
+	"github.com/arfan21/getprint-user/app/model/modeluser"
 	uuid "github.com/satori/go.uuid"
 )
 
-type UserResoponse struct {
+type User struct {
 	ID            uuid.UUID `json:"id"`
 	CreatedAt     time.Time `json:"created_at"`
 	Name          string    `json:"name"`
@@ -21,21 +22,17 @@ type UserResoponse struct {
 	LastLogin     time.Time `json:"last_login"`
 }
 
-type UserLoginResponse struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
-	Role  string    `json:"role"`
-}
-
-type LineVerifyIdTokenResponse struct {
-	Iss     string   `json:"iss"`
-	Sub     string   `json:"sub"`
-	Aud     string   `json:"aud"`
-	Exp     int      `json:"exp"`
-	Iat     int      `json:"iat"`
-	Nonce   string   `json:"nonce"`
-	Amr     []string `json:"amr"`
-	Name    string   `json:"name"`
-	Picture string   `json:"picture"`
-	Email   string   `json:"email,omitempty"`
+func (res *User) Set(user modeluser.User) {
+	res.ID = user.ID
+	res.CreatedAt = user.CreatedAt
+	res.Name = user.Name
+	res.Picture = user.Picture.String
+	res.Email = user.Email
+	res.EmailVerified = user.EmailVerified
+	res.PhoneNumber = user.PhoneNumber.String
+	res.Address = user.Address.String
+	res.Role = user.Role
+	res.Provider = user.Identities.Provider
+	res.ProviderID = user.Identities.ProviderID
+	res.LastLogin = user.UserLog.LastLogin.Time
 }
